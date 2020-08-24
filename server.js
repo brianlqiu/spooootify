@@ -131,8 +131,8 @@ async function updateHistory() {
                 },
                 json: true
             }
-
-            let last_updated = new Date(user.last_updated);
+            let lu_str = user.last_updated == null ? null : (user.last_updated + 'Z').replace(' ', 'T');
+            let last_updated = lu_str == null ? null : new Date(lu_str);
         
             request.post(authOptions, (err, resp, body) => {
                 if(!err && resp.statusCode === 200) {
@@ -151,6 +151,7 @@ async function updateHistory() {
                             // Only add if haven't added yet (null) or current timestamp > last updated timestamp 
                             // (since we don't know if user listened to 50 songs in last 30 minutes (probably not), 
                             // we would get invalid duplicates)
+                            item
                             if(last_updated == null || last_updated < new Date(item.played_at)) {
                                 // take the latest timestamp in this pull and save it; since items are sorted by
                                 // recency it'll be the first
