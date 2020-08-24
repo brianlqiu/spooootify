@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react'
+import Sidebar from '../../components/sidebar'
 
 function User({ data, profile }) {
     return (
         <div>
+            <Sidebar />
             <h1>Hi {profile.display_name}</h1>
             {data.map((entry, idx) =>
                 <p>{entry.track.name}</p>
@@ -30,8 +32,8 @@ export async function getServerSideProps(context) {
             Authorization: 'Bearer ' + access_token
         }
     })
-
     const profile = await fetch_profile.json();
+    
     return { props: { data, profile } };
 }
 
