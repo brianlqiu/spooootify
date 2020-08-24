@@ -3,10 +3,7 @@ const escape = require('sql-template-strings')
 
 // (Default) Get last 7 days of listening data
 export default async (req, res) => {
-    const {
-        query: { history }
-    } = req;
-    
+
     let query = req.query.history;
     let user = query[0];
     let startDate = query[1];

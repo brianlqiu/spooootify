@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react'
 
 function User({ data }) {
-    console.log(data);
     return (
         <div>
             <h1>Hi user</h1>
             {data.map((entry) =>
-                <p>{entry.song_id}</p>
+                <p>{entry.track.name}</p>
             )}
         </div>
     )
@@ -23,6 +22,8 @@ export async function getServerSideProps(context) {
     const res = await fetch(`http://localhost:3000/api/date/${id}/${start}/${end}`);
     const data = await res.json();
 
+    data.forEach((entry) => { entry.track = JSON.parse(entry.track); })
+    
     return { props: { data } };
 }
 

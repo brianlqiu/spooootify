@@ -166,10 +166,10 @@ async function updateHistory() {
                                 }
                                 let date = item.played_at.substring(0, 10);
                                 let time = item.played_at.substring(11, 19);
-                                let song_id = item.track.id;
-                                console.log(`Adding ${user.id}, ${song_id}, ${date}`);
-                                db.query(escape`INSERT INTO history (user_id, song_id, date, time) 
-                                                VALUES (${user.id}, ${song_id}, ${date}, ${time})`)
+                                console.log(`Adding ${user.id}, ${item.track.id}, ${date}`);
+                                console.log(item.track);
+                                db.query(escape`INSERT INTO history (user_id, date, time, track) 
+                                                VALUES (${user.id}, ${date}, ${time}, ${JSON.stringify(item.track)})`)
                             }
                         })
                         if(updated_timestamp) {
