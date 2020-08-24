@@ -157,7 +157,7 @@ async function updateHistory() {
                                 if(!updated_timestamp) { 
                                     new_timestamp = item.played_at.substring(0, 19).replace('T', ' ');
                                     console.log(new_timestamp);
-                                    update_timestamp = true;
+                                    updated_timestamp = true;
                                 }
                                 let date = item.played_at.substring(0, 10);
                                 let time = item.played_at.substring(11, 19);
