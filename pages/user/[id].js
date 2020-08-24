@@ -12,8 +12,8 @@ function User({ data }) {
 }
 
 export async function getServerSideProps(context) {
-    const { access_token } = context.query;
     const id = context.params.id.substring(0, context.params.id.indexOf('access_token'));
+    const access_token = context.params.id.substring(context.params.id.indexOf('access_token') + 'access_token='.length)
 
     let now = new Date();
     let start = now.toISOString().substring(0, 10)
@@ -23,6 +23,10 @@ export async function getServerSideProps(context) {
     const data = await res.json();
 
     data.forEach((entry) => { entry.track = JSON.parse(entry.track); })
+
+    const profile = await fetch('https://api.spotify.com/v1', {
+        method: 'GET',
+    })
     
     return { props: { data } };
 }

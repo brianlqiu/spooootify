@@ -147,8 +147,6 @@ async function updateHistory() {
                     }
         
                     request.get(options, (err0, resp0, body0) => {
-                        console.log('Data:')
-                        console.log(body0);
                         let updated_timestamp = false;
                         let new_timestamp;
                         body0.items.forEach((item) => {

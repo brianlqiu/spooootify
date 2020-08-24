@@ -18,9 +18,8 @@ html, body {
   left: 10px;
 }
 
-button {
-  height: 45px;
-  outline: none;
+*:focus {
+  outline: 0 !important;
 }
 
 /* Start purging... */
