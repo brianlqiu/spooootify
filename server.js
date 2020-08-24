@@ -70,9 +70,13 @@ app.prepare()
 
                     request.get(options, async (error, response, body2) => {
                         id = body2.id;
-                        db.query(escape`INSERT INTO users (id, refresh_token, last_updated) 
+                        let check = await db.query(escape`SELECT * FROM users WHERE id=${id}`);
+                        if(check.length == 0) {
+                            db.query(escape`INSERT INTO users (id, refresh_token, last_updated) 
                                         VALUES (${id}, ${body.refresh_token}, ${null})`);
-                        updateHistory();
+                            updateHistory();
+                            res.redirect(`/user/${id}` + querystring.stringify({access_token: body.access_token}));
+                        } 
                         res.redirect(`/user/${id}` + querystring.stringify({access_token: body.access_token}));
                     })
                 }
@@ -151,7 +155,7 @@ async function updateHistory() {
                             // Only add if haven't added yet (null) or current timestamp > last updated timestamp 
                             // (since we don't know if user listened to 50 songs in last 30 minutes (probably not), 
                             // we would get invalid duplicates)
-                            item
+
                             if(last_updated == null || last_updated < new Date(item.played_at)) {
                                 // take the latest timestamp in this pull and save it; since items are sorted by
                                 // recency it'll be the first
@@ -168,9 +172,11 @@ async function updateHistory() {
                                                 VALUES (${user.id}, ${song_id}, ${date}, ${time})`)
                             }
                         })
-                        db.query(escape`UPDATE users
+                        if(updated_timestamp) {
+                            db.query(escape`UPDATE users
                                         SET last_updated=${new_timestamp}
                                         WHERE id=${user.id}`)
+                        }
                     })
                 } else {
                     console.log(err);
