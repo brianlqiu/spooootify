@@ -20,6 +20,7 @@ html, body {
 
 button {
   height: 45px;
+  outline: none;
 }
 
 /* Start purging... */

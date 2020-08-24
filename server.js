@@ -9,11 +9,8 @@ const cookieParser = require('cookie-parser')
 const querystring = require('querystring')
 const request = require('request');
 
-const SpotifyWebApi = require('spotify-web-api-node');
-const { query, response } = require('express');
-
 const db = require('./lib/db')
-const escape = require('sql-template-strings')
+const escape = require('sql-template-strings');
 
 function generateRandomString(length) {
     var text = '';
@@ -49,8 +46,6 @@ app.prepare()
 
         server.get('/callback', (req, res) => {
             let code = req.query.code || null;
-            let state = req.query.state || null;
-            let storedState = req.qookies ? req.cookies[stateKey] : null;
 
             let authOptions = {
                 url: 'https://accounts.spotify.com/api/token',
@@ -66,33 +61,22 @@ app.prepare()
             }
 
             request.post(authOptions, (err, resp, body) => {
-                if (!err && response.statusCode === 200) {
-                    let spotify = new SpotifyWebApi({
-                        clientId: process.env.CLIENT_ID,
-                        clientSecret: process.env.CLIENT_SECRET,
-                        redirectUri: 'http://localhost:3000/callback'
+                if (!err && resp.statusCode === 200) {
+                    let options = {
+                        url: 'https://api.spotify.com/v1/me',
+                        headers: {'Authorization': 'Bearer ' + body.access_token },
+                        json: true
+                    };
+
+                    request.get(options, async (error, response, body2) => {
+                        id = body2.id;
+                        db.query(escape`INSERT INTO users (id, refresh_token, last_updated) 
+                                        VALUES (${id}, ${body.refresh_token}, ${null})`);
+                        updateHistory();
+                        res.redirect(`/user/${id}` + querystring.stringify({access_token: body.access_token}));
                     })
-
-                    spotify.setAccessToken(body.access_token);
-
-                    spotify.getMe()
-                        .then((data) => {
-                            id = data.body.id;
-                            refresh_token = body.refresh_token;
-                            db.query(escape`
-                                    INSERT INTO users (id, refresh_token, history)
-                                    VALUES (${id}, ${refresh_token}, ${null});
-                                `)
-                            res.redirect(`/user/${id}` + querystring.stringify({
-                                access_token: body.access_token,
-                                refresh_token: body.refresh_token
-                            }))
-                        })
                 }
             })
-
-
-
         })
 
         server.get('*', (req, res) => {
@@ -108,3 +92,92 @@ app.prepare()
         console.error(ex.stack)
         process.exit(1)
     })
+
+function getAccessToken(refresh_token) {
+    let authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        headers: { 'Authorization': 'Basic ' + (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')) },
+        form: {
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token
+        },
+        json: true
+    }
+
+    request.post(authOptions, (err, resp, body) => {
+        if(!err && resp.statusCode === 200) {
+            console.log(body);
+            return body.access_token;
+        } else {
+            console.log(err);
+            return null;
+        }
+    })
+}
+
+async function updateHistory() {
+    console.log('Getting users');
+    let users = await db.query(escape`SELECT * FROM users`);
+    console.log(users)
+    if(users !== undefined && users.length > 0) {
+        users.forEach(async (user) => {
+            console.log(`Getting access token from ${user.refresh_token}`)
+            let authOptions = {
+                url: 'https://accounts.spotify.com/api/token',
+                headers: { 'Authorization': 'Basic ' + (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')) },
+                form: {
+                    grant_type: 'refresh_token',
+                    refresh_token: user.refresh_token
+                },
+                json: true
+            }
+
+            let last_updated = new Date(user.last_updated);
+        
+            request.post(authOptions, (err, resp, body) => {
+                if(!err && resp.statusCode === 200) {
+                    let options = {
+                        url: 'https://api.spotify.com/v1/me/player/recently-played?limit=50',
+                        headers: { 'Authorization': 'Bearer ' + body.access_token },
+                        json: true
+                    }
+        
+                    request.get(options, (err0, resp0, body0) => {
+                        console.log('Data:')
+                        console.log(body0);
+                        let updated_timestamp = false;
+                        let new_timestamp;
+                        body0.items.forEach((item) => {
+                            // Only add if haven't added yet (null) or current timestamp > last updated timestamp 
+                            // (since we don't know if user listened to 50 songs in last 30 minutes (probably not), 
+                            // we would get invalid duplicates)
+                            if(last_updated == null || last_updated < new Date(item.played_at)) {
+                                // take the latest timestamp in this pull and save it; since items are sorted by
+                                // recency it'll be the first
+                                if(!updated_timestamp) { 
+                                    new_timestamp = item.played_at.substring(0, 19).replace('T', ' ');
+                                    console.log(new_timestamp);
+                                    update_timestamp = true;
+                                }
+                                let date = item.played_at.substring(0, 10);
+                                let time = item.played_at.substring(11, 19);
+                                let song_id = item.track.id;
+                                console.log(`Adding ${user.id}, ${song_id}, ${date}`);
+                                db.query(escape`INSERT INTO history (user_id, song_id, date, time) 
+                                                VALUES (${user.id}, ${song_id}, ${date}, ${time})`)
+                            }
+                        })
+                        db.query(escape`UPDATE users
+                                        SET last_updated=${new_timestamp}
+                                        WHERE id=${user.id}`)
+                    })
+                } else {
+                    console.log(err);
+                }
+            })
+        })
+    }
+}
+
+updateHistory();
+setInterval(updateHistory, 1000 * 60 * 25); 
