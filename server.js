@@ -135,8 +135,9 @@ async function updateHistory() {
                 },
                 json: true
             }
-            let lu_str = user.last_updated == null ? null : (user.last_updated + 'Z').replace(' ', 'T');
-            let last_updated = lu_str == null ? null : new Date(lu_str);
+
+            let last_updated = user.last_updated == null ? null : new Date(user.last_updated);
+            console.log(last_updated);
         
             request.post(authOptions, (err, resp, body) => {
                 if(!err && resp.statusCode === 200) {
@@ -153,12 +154,12 @@ async function updateHistory() {
                             // Only add if haven't added yet (null) or current timestamp > last updated timestamp 
                             // (since we don't know if user listened to 50 songs in last 30 minutes (probably not), 
                             // we would get invalid duplicates)
-
-                            if(last_updated == null || last_updated < new Date(item.played_at)) {
+                            let playedAt = new Date(item.played_at);
+                            if(last_updated == null || last_updated < playedAt) {
                                 // take the latest timestamp in this pull and save it; since items are sorted by
                                 // recency it'll be the first
                                 if(!updated_timestamp) { 
-                                    new_timestamp = item.played_at.substring(0, 19).replace('T', ' ');
+                                    new_timestamp = playedAt.toISOString().substring(0, 19).replace('T', ' ');
                                     console.log(new_timestamp);
                                     updated_timestamp = true;
                                 }
@@ -171,6 +172,7 @@ async function updateHistory() {
                             }
                         })
                         if(updated_timestamp) {
+                            console.log('New timestamp: ' + new_timestamp);
                             db.query(escape`UPDATE users
                                         SET last_updated=${new_timestamp}
                                         WHERE id=${user.id}`)

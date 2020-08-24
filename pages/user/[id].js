@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
 
-function User({ data }) {
+function User({ data, profile }) {
     return (
         <div>
-            <h1>Hi user</h1>
-            {data.map((entry) =>
+            <h1>Hi {profile.display_name}</h1>
+            {data.map((entry, idx) =>
                 <p>{entry.track.name}</p>
             )}
         </div>
@@ -24,11 +24,15 @@ export async function getServerSideProps(context) {
 
     data.forEach((entry) => { entry.track = JSON.parse(entry.track); })
 
-    const profile = await fetch('https://api.spotify.com/v1', {
+    const fetch_profile = await fetch('https://api.spotify.com/v1/me', {
         method: 'GET',
+        headers: {
+            Authorization: 'Bearer ' + access_token
+        }
     })
-    
-    return { props: { data } };
+
+    const profile = await fetch_profile.json();
+    return { props: { data, profile } };
 }
 
 export default User;
