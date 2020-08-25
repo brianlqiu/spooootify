@@ -8,28 +8,46 @@ function changeArtistPicture(e) {
 }
 
 function User({ profile, topArtistData, artistImages }) {
-
     return (
         <div>
             <Sidebar profile={profile}/>
-            <div class='pl-64 h-full grid grid-rows-5 gap-3'>
-                <div className='topArtists h-screen grid grid-cols-2 gap-3'>
+            <div class='pl-48 h-full grid grid-rows-5'>
+                <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top five artists of the last week:</div>
                         {topArtistData.labels.slice(0,5).map((artist, idx) => { 
-                                let classes = 'pl-40 pt-16 font-semibold text-' + (5 - idx); 
+                                let classes = 'pl-40 font-semibold text-' + (5 - idx); 
                                 return <div className='pt-8'><a onClick={changeArtistPicture} className={classes} img={artistImages[artist]}>{artist}</a></div>
                             }
                         )}
                     </div>
-                    <div id='artistPic'></div> 
+                    <div id='artistPic' style={{backgroundImage: 'url(' + artistImages[topArtistData.labels[0]] + ')'}}></div> 
                 </div>
                 <div className='topArtistGraph h-screen graph'>
                     <Bar 
-                        width={10}
-                        height={50}
+                        width={40}
+                        height={40}
                         data={topArtistData}
-                        options={{ maintainAspectRatio: false }}
+                        options={{
+                            maintainAspectRatio: false,
+                            legend: {
+                                labels: {
+                                    fontColor: 'black'
+                                }
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        fontColor: 'black'
+                                    }
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        fontColor: 'black'
+                                    }
+                                }]
+                            }
+                        }}
                     />
                 </div>
             </div>
@@ -78,7 +96,9 @@ export async function getServerSideProps(context) {
         datasets: [ 
             { 
                 label: 'Play Count',
-                data: values
+                data: values,
+                backgroundColor: 'rgba(45,55,72,0.6)',
+                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
             } 
         ]
     }

@@ -74,6 +74,15 @@ button:focus {
 #sidebar {
   width: 15vw;
 }
+
+.topArtistGraph {
+  padding-left: 5%;
+  background-color: #e2e8f0;
+  width: 100%;
+  padding-right: 2.5%;
+  margin-right: 0;
+  border-right: 0;
+}
 @media (min-width: 1200px) { 
 /* Or @media (min-width: config('screens.xl')) { */
   
