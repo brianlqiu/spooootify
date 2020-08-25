@@ -75,6 +75,10 @@ button:focus {
   width: 15vw;
 }
 
+#artistPic {
+  background-size: contain;
+}
+
 .topArtistGraph {
   padding-left: 5%;
   background-color: #e2e8f0;
