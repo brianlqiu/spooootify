@@ -58,7 +58,7 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
             <div className='pl-48 h-full grid grid-rows-5'>
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
-                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists</div>
+                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists:</div>
                         {artistPlaycountDataset.labels.slice(0,5).map((artist, idx) => { 
                                 let classes = 'pl-40 font-semibold text-' + (5 - idx); 
                                 return <div className='pt-8'><a onClick={changeArtistPicture} className={classes} img={top5Artists[artist]}>{artist}</a></div>

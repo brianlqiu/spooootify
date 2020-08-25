@@ -130,19 +130,30 @@ async function updateHistory() {
                     let newTimestamp = newLastUpdated.toISOString().substring(0, 19).replace('T', ' ');
                     request.get(options, async (err0, resp0, body0) => {
                         if(!err0 && resp0.statusCode === 200) {
-                            // We need to get full track info, make additional API call
                             let trackIds = body0.items.map((item) => item.track.id )
                             if(trackIds.length > 0) {
-                                const fetchTracks = await fetch('https://api.spotify.com/v1/tracks?ids=' + trackIds.join(','), {
+                                // Get full track object, history only gets partial
+                                let queryIds = trackIds.join(',');
+                                const fetchTracks = await fetch('https://api.spotify.com/v1/tracks?ids=' + queryIds, {
                                     method: 'GET',
                                     headers: {
                                         Authorization: 'Bearer ' + body.access_token
                                     }
                                 })
                                 const tracks = await fetchTracks.json();
+                                // Get audio features
+                                const fetchFeatures = await fetch('https://api.spotify.com/v1/audio-features?ids=' + queryIds, {
+                                    method: 'GET',
+                                    headers: {
+                                        Authorization: 'Bearer ' + body.access_token
+                                    }
+                                })
+                                const features = await fetchFeatures.json();
+
                                 // Since tracks should return in same order as requested, we can use body loop
                                 body0.items.forEach((item, idx) => {
                                     let currTrack = tracks.tracks[idx];
+                                    let currFeature = features.audio_features[idx];
 
                                     let date = item.played_at.substring(0, 10);
                                     let time = item.played_at.substring(11, 19);
@@ -153,14 +164,16 @@ async function updateHistory() {
                                     db.query(escape`INSERT INTO history 
                                                             (user_id, date, time, album_type, artist_id, image,
                                                             album_name, duration, explicit, track_id, track_name, 
-                                                            popularity, preview_url, release_date, artist_name) 
+                                                            popularity, preview_url, release_date, artist_name,
+                                                            energy, valence) 
                                                         VALUES (${user.id}, ${date}, ${time}, 
                                                                 ${currTrack.album.album_type}, ${artist_id}, ${image}, 
                                                                 ${currTrack.album.name}, ${currTrack.duration_ms}, 
                                                                 ${currTrack.explicit}, ${currTrack.id}, 
                                                                 ${currTrack.name}, ${currTrack.popularity}, 
                                                                 ${currTrack.preview_url}, 
-                                                                ${currTrack.album.release_date}, ${artist_name})`)
+                                                                ${currTrack.album.release_date}, ${artist_name},
+                                                                ${currFeature.energy}, ${currFeature.valence})`)
                                 })
                                 console.log('New timestamp: ' + newTimestamp);
                                 db.query(escape`UPDATE users
