@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react'
 import { Bar } from 'react-chartjs-2';
+import db from '../../lib/db'
+
+const escape = require('sql-template-strings')
 
 function changeArtistPicture(e) {
     console.log(e.target.getAttribute('img'));
@@ -10,8 +13,9 @@ function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
 
-function User({ profile, topArtistData, artistImages }) {
-    let img = profile.images.length == 0 ? '/profile.png' : profile.images[0].url;
+function User({ profile, artistPlaycountDataset, top5Artists }) {
+    console.log(profile);
+    let img = profile[0].image == null ? '/profile.png' : profile[0].image;
     return (
         <div>
             <div id="main" >
@@ -55,19 +59,19 @@ function User({ profile, topArtistData, artistImages }) {
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists</div>
-                        {topArtistData.labels.slice(0,5).map((artist, idx) => { 
+                        {artistPlaycountDataset.labels.slice(0,5).map((artist, idx) => { 
                                 let classes = 'pl-40 font-semibold text-' + (5 - idx); 
-                                return <div className='pt-8'><a onMouseOver={changeArtistPicture} className={classes} img={artistImages[artist]}>{artist}</a></div>
+                                return <div className='pt-8'><a onClick={changeArtistPicture} className={classes} img={top5Artists[artist]}>{artist}</a></div>
                             }
                         )}
                     </div>
-                    <div id='artistPic' style={{backgroundImage: 'url(' + artistImages[topArtistData.labels[0]] + ')'}}></div> 
+                    <div id='artistPic' style={{backgroundImage: 'url(' + top5Artists[artistPlaycountDataset.labels[0]] + ')'}}></div> 
                 </div>
                 <div className='topArtistGraph h-screen graph'>
                     <Bar 
                         width={40}
                         height={40}
-                        data={topArtistData}
+                        data={artistPlaycountDataset}
                         options={{
                             maintainAspectRatio: false,
                             legend: {
@@ -78,7 +82,8 @@ function User({ profile, topArtistData, artistImages }) {
                             scales: {
                                 yAxes: [{
                                     ticks: {
-                                        fontColor: 'black'
+                                        fontColor: 'black',
+                                        beginAtZero: true,
                                     }
                                 }],
                                 xAxes: [{
@@ -100,81 +105,72 @@ export async function getServerSideProps(context) {
     const id = context.params.id.substring(0, context.params.id.indexOf('access_token'));
     const access_token = context.params.id.substring(context.params.id.indexOf('access_token') + 'access_token='.length)
 
-    // Fetch info from database
-    let now = new Date();
-    let start = now.toISOString().substring(0, 10)
-    now.setTime(now.getDate() - 7);
-    let end = now.toISOString().substring(0, 10);
-    const res = await fetch(`http://localhost:3000/api/date/${id}/${start}/${end}`);
-    const data = await res.json();
-    // Convert string json into JSON
-    data.forEach((entry) => { entry.track = JSON.parse(entry.track); })
+    // Fetch profile
+    const fetchProfile = await fetch(`http://localhost:3000/api/users/${id}`);
+    const profile = await fetchProfile.json();
 
-    // Fetch profile from Spotify on each user visit, since user may have changed profile picture/name
-    const fetch_profile = await fetch('https://api.spotify.com/v1/me', {
-        method: 'GET',
-        headers: {
-            Authorization: 'Bearer ' + access_token
-        }
-    })
-    const profile = await fetch_profile.json();
+    // By default, all data gotten will be for one week (will change later)
+    let date = new Date();
+    let start = date.toISOString().substring(0, 10);
+    date.setDate(date.getDate() - 7);
+    let end = date.toISOString().substring(0, 10);
 
-    // Parse listening history to get:
-    // - Play count per artist
-    // - Unique main artist IDs (to get artist-specific data)
-    // - Play count per album
-    let artistIds = {};
-    let topArtistCount = {};
-    let topAlbumCount = {};
-    data.forEach((entry) => {
-        let artist = entry.track.artists[0].name;
-        if(artist in topArtistCount) {
-            topArtistCount[artist] += 1;
-        } else {
-            topArtistCount[artist] = 1;
-        }
-        artistIds[artist] = entry.track.artists[0].id;
-    })
+    // Fetch play count for artist
+    const fetchArtistPlaycount = await fetch(`http://localhost:3000/api/history/artistplaycount/${id}/${start}/${end}`);
+    const artistPlaycount = await fetchArtistPlaycount.json();
 
-    // Get list of artists & their play counts sorted by play count for dataset
-    let artists = Object.keys(topArtistCount).sort((a, b) => { return topArtistCount[b] - topArtistCount[a]; })
-    let values = Object.values(topArtistCount).sort((a, b) => { return b - a; });
-
-    // Populate data for topArtistGraph
-    let topArtistData = {
-        labels: artists,
-        datasets: [ 
-            { 
+    let artistNames = [];
+    let artistPlaycounts = [];
+    for(let i = 0; i < artistPlaycount.length; i++) {
+        artistNames.push(artistPlaycount[i].artist_name);
+        artistPlaycounts.push(artistPlaycount[i]['COUNT(artist_id)']);
+    }
+    // Format data for chart
+    let artistPlaycountDataset = {
+        labels: artistNames,
+        datasets: [
+            {
                 label: 'Play Count',
-                data: values,
+                data: artistPlaycounts,
                 backgroundColor: 'rgba(45,55,72,0.6)',
                 hoverBackgroundColor: 'rgba(45,55,72,0.8)',
-            } 
+            }
         ]
     }
 
-    // Get the IDs of the top 5 artists to get image sources
+    // Try fetching top 5 artists from database; if doesn't exist, fetch from API and store in database
+    // Don't store all artists because we don't really need to waste API calls/storage storing all artists, since we 
+    // only display first 5 anyway
+    const top5Artists = {};
     let top5Ids = [];
     for(let i = 0; i < 5; i++) {
-        top5Ids.push(artistIds[artists[i]]);
-    }
+        let fetchArtist = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`);
+        let artist = await fetchArtist.json();
 
-    // Fetch top 5 artist images
-    const artistsData = await fetch('https://api.spotify.com/v1/artists?ids=' + top5Ids.join(','), {
-        method: 'GET',
-        headers: {
-            Authorization: 'Bearer ' + access_token
+        if(artist.length == 0) {
+            top5Ids.push(artistPlaycount[i].artist_id); // store id so we can batch in single API call, not multiple
+        } else {
+            top5Artists[artist[0].artist_name] = artist[0].image;
         }
-    })
-    const artistsJson = await artistsData.json();
-    // Map artist to artist image
-    let artistImages = {};
-    for(let i = 0; i < 5; i++) {
-        let artist = artistsJson.artists[i];
-        artistImages[artist.name] = artist.images[0].url;
+    }
+    // Some artists not in database, fetch their data and store in database
+    if(top5Ids.length > 0) {
+        const fetchArtists = await fetch('https://api.spotify.com/v1/artists?ids=' + top5Ids.join(','), {
+            method: 'GET',
+            headers: {
+                Authorization: 'Bearer ' + access_token,
+            }
+        })
+        const artists = await fetchArtists.json();
+        for(let i = 0; i < artists.artists.length; i++) {
+            let a = artists.artists[i];
+            top5Artists[a.name] = a.images[0].url;
+            db.query(escape`INSERT INTO artists (artist_id, artist_name, image)
+                            VALUES(${a.id}, ${a.name}, ${a.images[0].url})`)
+        }
     }
     
-    return { props: { profile, topArtistData, artistImages} };
+    return { props: { profile, artistPlaycountDataset, top5Artists} };
 }
 
 export default User;

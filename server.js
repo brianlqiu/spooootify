@@ -69,13 +69,14 @@ app.prepare()
                     };
 
                     request.get(options, async (error, response, body2) => {
-                        id = body2.id;
-                        let check = await db.query(escape`SELECT DATE_FORMAT(last_updated, '%Y-%m-%dT%H%i:%sZ') FROM users WHERE id=${id}`);
+                        let id = body2.id;
+                        let image = body2.images.length > 0 ? body2.images[0].url : null;
+                        let check = await db.query(escape`SELECT id FROM users WHERE id=${id}`);
                         if(check.length == 0) {
-                            db.query(escape`INSERT INTO users (id, refresh_token, last_updated) 
-                                        VALUES (${id}, ${body.refresh_token}, ${null})`);
+                            db.query(escape`INSERT INTO users (id, refresh_token, last_updated, image, name) 
+                                            VALUES (${id}, ${body.refresh_token}, ${null}, ${image}, 
+                                                    ${body2.display_name})`);
                             updateHistory();
-                            res.redirect(`/user/${id}` + querystring.stringify({access_token: body.access_token}));
                         } 
                         res.redirect(`/user/${id}` + querystring.stringify({access_token: body.access_token}));
                     })
@@ -96,28 +97,6 @@ app.prepare()
         console.error(ex.stack)
         process.exit(1)
     })
-
-function getAccessToken(refresh_token) {
-    let authOptions = {
-        url: 'https://accounts.spotify.com/api/token',
-        headers: { 'Authorization': 'Basic ' + (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')) },
-        form: {
-            grant_type: 'refresh_token',
-            refresh_token: refresh_token
-        },
-        json: true
-    }
-
-    request.post(authOptions, (err, resp, body) => {
-        if(!err && resp.statusCode === 200) {
-            console.log(body);
-            return body.access_token;
-        } else {
-            console.log(err);
-            return null;
-        }
-    })
-}
 
 async function updateHistory() {
     console.log('Getting users');
@@ -166,19 +145,20 @@ async function updateHistory() {
                                     let date = item.played_at.substring(0, 10);
                                     let time = item.played_at.substring(11, 19);
                                     let artist_id = currTrack.artists[0].id;
+                                    let artist_name = currTrack.artists[0].name;
                                     let image = currTrack.album.images[0].url;
 
                                     db.query(escape`INSERT INTO history 
                                                             (user_id, date, time, album_type, artist_id, image,
                                                             album_name, duration, explicit, track_id, track_name, 
-                                                            popularity, preview_url, release_date) 
+                                                            popularity, preview_url, release_date, artist_name) 
                                                         VALUES (${user.id}, ${date}, ${time}, 
                                                                 ${currTrack.album.album_type}, ${artist_id}, ${image}, 
                                                                 ${currTrack.album.name}, ${currTrack.duration_ms}, 
                                                                 ${currTrack.explicit}, ${currTrack.id}, 
                                                                 ${currTrack.name}, ${currTrack.popularity}, 
                                                                 ${currTrack.preview_url}, 
-                                                                ${currTrack.album.release_date})`)
+                                                                ${currTrack.album.release_date}, ${artist_name})`)
                                 })
                                 console.log('New timestamp: ' + newTimestamp);
                                 db.query(escape`UPDATE users
