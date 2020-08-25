@@ -147,19 +147,46 @@ async function updateHistory() {
                     let newLastUpdated = new Date();
                     newLastUpdated.setHours(newLastUpdated.getHours() - 7);
                     let newTimestamp = newLastUpdated.toISOString().substring(0, 19).replace('T', ' ');
-                    request.get(options, (err0, resp0, body0) => {
+                    request.get(options, async (err0, resp0, body0) => {
                         if(!err0 && resp0.statusCode === 200) {
-                            body0.items.forEach((item) => {
-                                let date = item.played_at.substring(0, 10);
-                                let time = item.played_at.substring(11, 19);
-                                console.log(`Adding ${user.id}, ${item.track.id}, ${date}`);
-                                db.query(escape`INSERT INTO history (user_id, date, time, track) 
-                                                VALUES (${user.id}, ${date}, ${time}, ${JSON.stringify(item.track)})`)
-                            })
-                            console.log('New timestamp: ' + newTimestamp);
-                            db.query(escape`UPDATE users
-                                            SET last_updated=${newTimestamp}
-                                            WHERE id=${user.id}`)
+                            // We need to get full track info, make additional API call
+                            let trackIds = body0.items.map((item) => item.track.id )
+                            if(trackIds.length > 0) {
+                                const fetchTracks = await fetch('https://api.spotify.com/v1/tracks?ids=' + trackIds.join(','), {
+                                    method: 'GET',
+                                    headers: {
+                                        Authorization: 'Bearer ' + body.access_token
+                                    }
+                                })
+                                const tracks = await fetchTracks.json();
+                                // Since tracks should return in same order as requested, we can use body loop
+                                body0.items.forEach((item, idx) => {
+                                    let currTrack = tracks.tracks[idx];
+
+                                    let date = item.played_at.substring(0, 10);
+                                    let time = item.played_at.substring(11, 19);
+                                    let artist_id = currTrack.artists[0].id;
+                                    let image = currTrack.album.images[0].url;
+
+                                    db.query(escape`INSERT INTO history 
+                                                            (user_id, date, time, album_type, artist_id, image,
+                                                            album_name, duration, explicit, track_id, track_name, 
+                                                            popularity, preview_url, release_date) 
+                                                        VALUES (${user.id}, ${date}, ${time}, 
+                                                                ${currTrack.album.album_type}, ${artist_id}, ${image}, 
+                                                                ${currTrack.album.name}, ${currTrack.duration_ms}, 
+                                                                ${currTrack.explicit}, ${currTrack.id}, 
+                                                                ${currTrack.name}, ${currTrack.popularity}, 
+                                                                ${currTrack.preview_url}, 
+                                                                ${currTrack.album.release_date})`)
+                                })
+                                console.log('New timestamp: ' + newTimestamp);
+                                db.query(escape`UPDATE users
+                                                SET last_updated=${newTimestamp}
+                                                WHERE id=${user.id}`)
+
+    
+                            }
                         } else {
                             console.log(err);
                         }
