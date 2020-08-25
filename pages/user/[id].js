@@ -9,6 +9,7 @@ function changeArtistPicture(e) {
 function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
+
 function User({ profile, topArtistData, artistImages }) {
     let img = profile.images.length == 0 ? '/profile.png' : profile.images[0].url;
     return (
@@ -25,7 +26,7 @@ function User({ profile, topArtistData, artistImages }) {
                         </div>
                         <div dest='topArtists' className="group object-center relative sidebar-item with-children">
                             <a onClick={scrollIntoViewWrapper} dest='topArtists' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="graph-icon icon icon-tabler icon-tabler-brush" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFFFFF" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="graph-icon icon icon-tabler icon-tabler-brush" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#FFFFFF" fill="none" strokeLinecap="round" strokeLinejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z"/>
                                 <path d="M3 21v-4a4 4 0 1 1 4 4h-4" />
                                 <path d="M21 3a16 16 0 0 0 -12.8 10.2" />
@@ -50,13 +51,13 @@ function User({ profile, topArtistData, artistImages }) {
                     </div>
                 </div>
             </div>
-            <div class='pl-48 h-full grid grid-rows-5'>
+            <div className='pl-48 h-full grid grid-rows-5'>
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top five artists of the last week:</div>
                         {topArtistData.labels.slice(0,5).map((artist, idx) => { 
                                 let classes = 'pl-40 font-semibold text-' + (5 - idx); 
-                                return <div className='pt-8'><a onClick={changeArtistPicture} className={classes} img={artistImages[artist]}>{artist}</a></div>
+                                return <div className='pt-8'><a onMouseOver={changeArtistPicture} className={classes} img={artistImages[artist]}>{artist}</a></div>
                             }
                         )}
                     </div>
@@ -95,18 +96,21 @@ function User({ profile, topArtistData, artistImages }) {
 }
 
 export async function getServerSideProps(context) {
+    // Get user ID & access_token
     const id = context.params.id.substring(0, context.params.id.indexOf('access_token'));
     const access_token = context.params.id.substring(context.params.id.indexOf('access_token') + 'access_token='.length)
 
+    // Fetch info from database
     let now = new Date();
     let start = now.toISOString().substring(0, 10)
     now.setTime(now.getDate() - 7);
     let end = now.toISOString().substring(0, 10);
     const res = await fetch(`http://localhost:3000/api/date/${id}/${start}/${end}`);
     const data = await res.json();
-
+    // Convert string json into JSON
     data.forEach((entry) => { entry.track = JSON.parse(entry.track); })
 
+    // Fetch profile from Spotify on each user visit, since user may have changed profile picture/name
     const fetch_profile = await fetch('https://api.spotify.com/v1/me', {
         method: 'GET',
         headers: {
@@ -115,6 +119,9 @@ export async function getServerSideProps(context) {
     })
     const profile = await fetch_profile.json();
 
+    // Parse listening history to get:
+    // - Play count per artist
+    // - Unique main artist IDs (to get artist-specific data)
     let artistIds = {};
     let topArtistCount = {};
     data.forEach((entry) => {
@@ -127,9 +134,11 @@ export async function getServerSideProps(context) {
         artistIds[artist] = entry.track.artists[0].id;
     })
 
+    // Get list of artists & their play counts sorted by play count for dataset
     let artists = Object.keys(topArtistCount).sort((a, b) => { return topArtistCount[b] - topArtistCount[a]; })
     let values = Object.values(topArtistCount).sort((a, b) => { return b - a; });
 
+    // Populate data for topArtistGraph
     let topArtistData = {
         labels: artists,
         datasets: [ 
@@ -142,11 +151,13 @@ export async function getServerSideProps(context) {
         ]
     }
 
+    // Get the IDs of the top 5 artists to get image sources
     let top5Ids = [];
     for(let i = 0; i < 5; i++) {
         top5Ids.push(artistIds[artists[i]]);
     }
 
+    // Fetch top 5 artist images
     const artistsData = await fetch('https://api.spotify.com/v1/artists?ids=' + top5Ids.join(','), {
         method: 'GET',
         headers: {
@@ -154,14 +165,12 @@ export async function getServerSideProps(context) {
         }
     })
     const artistsJson = await artistsData.json();
-
+    // Map artist to artist image
     let artistImages = {};
     for(let i = 0; i < 5; i++) {
         let artist = artistsJson.artists[i];
         artistImages[artist.name] = artist.images[0].url;
     }
-
-    console.log(artistImages);
     
     return { props: { profile, topArtistData, artistImages} };
 }
