@@ -8,6 +8,9 @@ module.exports = {
       'default': ['Circular', 'Helvetica', 'Arial', 'sans-serif', 'IosFix'],
     },
     extend: {
+      gridTemplateRows: {
+        'layout': '100vh',
+      },
       colors: {
         'accent-1': '#333',
       },

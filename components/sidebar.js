@@ -2,19 +2,25 @@ export default function Sidebar({ profile }) {
     let img = profile.images.length == 0 ? '/profile.png' : profile.images[0].url;
     return (
         <div id="main" >
-            <div id='sidebar' className="pt-6 bg-black opacity-75 fixed h-full min-h-screen">
+            <div id='sidebar' className="pt-6 bg-gray-900 fixed h-full min-h-screen">
                 <div className="xl:py-2">
                     <img id='profile' className='object-center' src={img}></img>
                     <div className='pt-4 text-white text-xl object-center text-center'>{profile.display_name}</div>
                 </div>
                 <div className="xl:py-2">
-                    <div className="hidden xl:block uppercase font-bold text-grey-darker text-xs px-4 py-2">
-                        Secondary
-            </div>
-                    <div className="group relative sidebar-item with-children">
+                    <div className="object-center text-center xl:block uppercase font-bold text-white text-xs px-4 py-2">
+                        Charts
+                    </div>
+                    <div className="group object-center relative sidebar-item with-children">
                         <a href="#" className="block xl:flex xl:items-center text-center xl:text-left shadow-light xl:shadow-none py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" className="h-6 w-6 text-grey-darker fill-current xl:mr-2"><path d="M12 18.62l-6.55 3.27A1 1 0 0 1 4 21V4c0-1.1.9-2 2-2h12a2 2 0 0 1 2 2v17a1 1 0 0 1-1.45.9L12 18.61zM18 4H6v15.38l5.55-2.77a1 1 0 0 1 .9 0L18 19.38V4z" className="heroicon-ui"></path></svg>
-                            <div className="text-white text-xs">Bookmarks</div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="graph-icon icon icon-tabler icon-tabler-brush" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFFFFF" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z"/>
+                            <path d="M3 21v-4a4 4 0 1 1 4 4h-4" />
+                            <path d="M21 3a16 16 0 0 0 -12.8 10.2" />
+                            <path d="M21 3a16 16 0 0 1 -10.2 12.8" />
+                            <path d="M10.6 9a9 9 0 0 1 4.4 4.4" />
+                            </svg>
+                            <div className="text-white text-xs pl-2">Artists</div>
                         </a>
                     </div>
                     <div className="group relative sidebar-item with-children">

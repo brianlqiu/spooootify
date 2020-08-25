@@ -32,6 +32,36 @@ button:focus {
   padding-left: 17rem;
 }
 
+.graph-icon {
+  height: 24px;
+  width: 24px;
+}
+
+.graph {
+  height: 100vh;
+  width: 97%;
+}
+
+.text-5 {
+  font-size: 3rem;
+}
+
+.text-4 {
+  font-size: 2.75rem;
+}
+
+.text-3 {
+  font-size: 2.5rem;
+}
+
+.text-2 {
+  font-size: 2.25rem;
+}
+
+.text-1 {
+  font-size: 2rem;
+}
+
 #profile {
   border: 0;
   width: 150px;
