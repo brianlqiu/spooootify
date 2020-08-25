@@ -182,7 +182,8 @@ async function updateHistory() {
 }
 
 async function updateUsers() {
-    let users = await db.query(escape`SELECT id, refresh_token FROM users`);
+    let fetchUsers = await db.query(escape`SELECT id, refresh_token FROM users`);
+    let users = await fetchUsers.json();
     users.forEach(async (user) => {
         let fetchToken = await fetch('https://accounts.spotify.com/api/token', {
             headers: { 
@@ -205,6 +206,52 @@ async function updateUsers() {
     })
 }
 
+async function updateArtists() {
+    let fetchArtists = await db.query(escape`SELECT artist_id FROM artists`);
+    let artists = await fetchArtists.json();
+
+    // Doesn't matter whose refresh token we get, we just need one to pull from API
+    let fetchToken = await db.query(escape`SELECT refresh_token FROM users WHERE id='wrkk45w6rc45m90a6rs9sl9yy'`); 
+    let token = await fetchToken.json();
+    let fetchAccess = await fetch('https://accounts.spotify.com/api/token', {
+        headers: { 
+            'Authorization': 'Basic ' + Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64') 
+        },
+        body: {
+            grant_type: 'refresh_token',
+            refresh_token: token[0].refresh_token
+        }
+    });
+    let access = await fetchAccess.json();
+    
+    let artistBatches = [];
+    let batchStr = '';
+    artists.forEach((artist, idx) => {
+        batchStr.concat(artist.artist_id);
+        if((idx + 1) % 50 == 0 || idx + 1 == artists.length) { // get batches of 50
+            artistBatches.push(batchStr);
+            batchStr = '';
+        } 
+        batchStr.concat(',');
+    })
+
+    artistBatches.forEach(async (batch) => {
+        let fetchBatchArtists = await fetch('https://api.spotify.com/v1/artists?ids=' + batch, {
+            method: 'GET',
+            headers: {
+                Authorization: 'Bearer ' + access_token,
+            }
+        })
+
+        let batchArtists = await fetchBatchArtists.json();
+    
+        batchArtists.artists.forEach((a) => {
+            db.query(escape`UPDATE artists SET artist_name=${a.name}, image=${a.images[0].url} WHERE artist_id=${a.id}`)
+        })
+    })
+}
+
 updateHistory(); // Update history on server start
-setInterval(updateHistory, 1000 * 60 * 25);  // update every 25 minutes
-setInterval(updateUsers, 1000 * 60 * 60 * 24); // update daily
+setInterval(updateHistory,  1000 * 60 * 25);  // update every 25 minutes
+setInterval(updateUsers,    1000 * 60 * 60 * 24); // update daily
+setInterval(updateArtists,  1000 * 60 * 60 * 24);
