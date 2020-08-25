@@ -4,11 +4,12 @@ import Sidebar from '../../components/sidebar'
 function User({ data, profile }) {
     return (
         <div>
-            <Sidebar />
-            <h1>Hi {profile.display_name}</h1>
-            {data.map((entry, idx) =>
-                <p>{entry.track.name}</p>
-            )}
+            <Sidebar profile={profile}/>
+            <div id='gridbox' class='grid grid-cols-3 gap-4'>
+                <div>1</div>
+                <div>2</div>
+                <div>3</div>
+            </div>
         </div>
     )
 }

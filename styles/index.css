@@ -22,18 +22,27 @@ button:focus {
   outline: 0 !important;
 }
 
-/*
- * We'll use CSS grids for the base template
- * More info on https://cssgrid.io/ by @wesbos
- */
  #main {
   display: grid;
-  grid-template-columns: 6rem auto;
-  /* Or grid-template-columns: config('width.24') auto; */
+  grid-template-columns: 10rem auto;
 }
 
+#gridbox {
+  display: grid;
+  padding-left: 17rem;
+}
+
+#profile {
+  border: 0;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
 #sidebar {
-  background-color: black;
+  width: 15vw;
 }
 @media (min-width: 1200px) { 
 /* Or @media (min-width: config('screens.xl')) { */
