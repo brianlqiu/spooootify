@@ -22,7 +22,7 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
                 <div id='sidebar' className="pt-6 bg-gray-900 fixed h-full min-h-screen">
                     <div className="xl:py-2">
                         <img id='profile' className='object-center' src={img}></img>
-                        <div className='pt-4 text-white text-xl object-center text-center'>{profile.display_name}</div>
+                        <div className='pt-4 text-white text-xl object-center text-center'>{profile[0].display_name}</div>
                     </div>
                     <div className="xl:py-2">
                         <div className="object-center text-center xl:block uppercase font-bold text-white text-xs px-4 py-2">

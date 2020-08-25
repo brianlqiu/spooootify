@@ -55,7 +55,7 @@ app.prepare()
                     grant_type: 'authorization_code'
                 },
                 headers: {
-                    'Authorization': 'Basic ' + (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64'))
+                    'Authorization': 'Basic ' + Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64') 
                 },
                 json: true
             }
@@ -107,7 +107,9 @@ async function updateHistory() {
             console.log(`Getting access token from ${user.refresh_token}`)
             let authOptions = {
                 url: 'https://accounts.spotify.com/api/token',
-                headers: { 'Authorization': 'Basic ' + (new Buffer(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')) },
+                headers: { 
+                    'Authorization': 'Basic ' + Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64') 
+                },
                 form: {
                     grant_type: 'refresh_token',
                     refresh_token: user.refresh_token
@@ -179,5 +181,30 @@ async function updateHistory() {
     }
 }
 
-updateHistory();
-setInterval(updateHistory, 1000 * 60 * 25); 
+async function updateUsers() {
+    let users = await db.query(escape`SELECT id, refresh_token FROM users`);
+    users.forEach(async (user) => {
+        let fetchToken = await fetch('https://accounts.spotify.com/api/token', {
+            headers: { 
+                'Authorization': 'Basic ' + Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64') 
+            },
+            body: {
+                grant_type: 'refresh_token',
+                refresh_token: user.refresh_token
+            }
+        })
+        let token = await fetchToken.json();
+
+        let fetchProfile = await fetch('https://api.spotify.com/v1/me', {
+            headers: {'Authorization': 'Bearer ' + token.access_token }
+        })
+        let profile = await fetchProfile.json();
+
+        let image = profile.images.length > 0 ? profile.images[0].url : null;
+        db.query(escape`UPDATE users SET image=${image}, name=${profile.display_name} WHERE id=${user.id}`);
+    })
+}
+
+updateHistory(); // Update history on server start
+setInterval(updateHistory, 1000 * 60 * 25);  // update every 25 minutes
+setInterval(updateUsers, 1000 * 60 * 60 * 24); // update daily
