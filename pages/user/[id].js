@@ -54,7 +54,7 @@ function User({ profile, topArtistData, artistImages }) {
             <div className='pl-48 h-full grid grid-rows-5'>
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
-                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top five artists of the last week:</div>
+                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists</div>
                         {topArtistData.labels.slice(0,5).map((artist, idx) => { 
                                 let classes = 'pl-40 font-semibold text-' + (5 - idx); 
                                 return <div className='pt-8'><a onMouseOver={changeArtistPicture} className={classes} img={artistImages[artist]}>{artist}</a></div>
@@ -122,8 +122,10 @@ export async function getServerSideProps(context) {
     // Parse listening history to get:
     // - Play count per artist
     // - Unique main artist IDs (to get artist-specific data)
+    // - Play count per album
     let artistIds = {};
     let topArtistCount = {};
+    let topAlbumCount = {};
     data.forEach((entry) => {
         let artist = entry.track.artists[0].name;
         if(artist in topArtistCount) {
