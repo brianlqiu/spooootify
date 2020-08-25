@@ -91,6 +91,11 @@ app.prepare()
         server.listen(PORT, (err) => {
             if (err) throw err
             console.log('> Ready on http://localhost:3000')
+
+            updateHistory(); // Update history on server start
+            setInterval(updateHistory,  1000 * 60 * 25);  // update every 25 minutes
+            setInterval(updateUsers,    1000 * 60 * 60 * 24); // update daily
+            setInterval(updateArtists,  1000 * 60 * 60 * 24);
         })
     })
     .catch((ex) => {
@@ -99,6 +104,10 @@ app.prepare()
     })
 
 async function updateHistory() {
+    const artists = await db.query(escape`SELECT artist_id FROM artists`);
+    let artistSet = new Set(artists);
+
+
     console.log('Getting users');
     let users = await db.query(escape`SELECT * FROM users`);
     console.log(users)
@@ -150,30 +159,58 @@ async function updateHistory() {
                                 })
                                 const features = await fetchFeatures.json();
 
+                                let artistsTBA = [];
+
                                 // Since tracks should return in same order as requested, we can use body loop
-                                body0.items.forEach((item, idx) => {
-                                    let currTrack = tracks.tracks[idx];
-                                    let currFeature = features.audio_features[idx];
+                                let res = new Promise((resolve, reject) => {
+                                    body0.items.forEach(async (item, idx) => {
+                                        let currTrack = tracks.tracks[idx];
+                                        let currFeature = features.audio_features[idx];
 
-                                    let date = item.played_at.substring(0, 10);
-                                    let time = item.played_at.substring(11, 19);
-                                    let artist_id = currTrack.artists[0].id;
-                                    let artist_name = currTrack.artists[0].name;
-                                    let image = currTrack.album.images[0].url;
+                                        let date = item.played_at.substring(0, 10);
+                                        let time = item.played_at.substring(11, 19);
+                                        let artist_id = currTrack.artists[0].id;
+                                        let artist_name = currTrack.artists[0].name;
+                                        let image = currTrack.album.images[0].url;
 
-                                    db.query(escape`INSERT INTO history 
-                                                            (user_id, date, time, album_type, artist_id, image,
-                                                            album_name, duration, explicit, track_id, track_name, 
-                                                            popularity, preview_url, release_date, artist_name,
-                                                            energy, valence) 
-                                                        VALUES (${user.id}, ${date}, ${time}, 
-                                                                ${currTrack.album.album_type}, ${artist_id}, ${image}, 
-                                                                ${currTrack.album.name}, ${currTrack.duration_ms}, 
-                                                                ${currTrack.explicit}, ${currTrack.id}, 
-                                                                ${currTrack.name}, ${currTrack.popularity}, 
-                                                                ${currTrack.preview_url}, 
-                                                                ${currTrack.album.release_date}, ${artist_name},
-                                                                ${currFeature.energy}, ${currFeature.valence})`)
+                                        if(!artistSet.has(artist_id)) {
+                                            artistSet.add(artist_id);
+                                            artistsTBA.push(artist_id);
+                                            console.log(artist_id);
+                                        }
+
+                                        db.query(escape`INSERT INTO history 
+                                                                (user_id, date, time, album_type, artist_id, image,
+                                                                duration, track_id, track_name, 
+                                                                popularity, preview_url, artist_name,
+                                                                energy, valence, album_id, album_name, release_date) 
+                                                            VALUES (${user.id}, ${date}, ${time}, 
+                                                                    ${currTrack.album.album_type}, ${artist_id}, ${image}, 
+                                                                    ${currTrack.duration_ms}, 
+                                                                    ${currTrack.id}, 
+                                                                    ${currTrack.name}, ${currTrack.popularity}, 
+                                                                    ${currTrack.preview_url}, 
+                                                                    ${artist_name},
+                                                                    ${currFeature.energy}, ${currFeature.valence},
+                                                                    ${currTrack.album.id}, ${currTrack.album.name},
+                                                                    ${currTrack.album.release_date})`)
+                                        if(idx === body0.items.length - 1) {
+                                            resolve();
+                                        }
+                                    })
+                                }).then(async () => {
+                                    let fetchBatchArtists = await fetch('https://api.spotify.com/v1/artists?ids=' + artistsTBA.join(','), {
+                                        method: 'GET',
+                                        headers: {
+                                            Authorization: 'Bearer ' + body.access_token,
+                                        }
+                                    })
+                                    let batchArtists = await fetchBatchArtists.json();
+                                
+                                    batchArtists.artists.forEach((a) => {
+                                        db.query(escape`INSERT INTO artists (artist_id, artist_name, image, genres)
+                                                        VALUES (${a.id}, ${a.name}, ${a.images[0].url}, ${JSON.stringify(a.genres)})`)
+                                    })
                                 })
                                 console.log('New timestamp: ' + newTimestamp);
                                 db.query(escape`UPDATE users
@@ -240,12 +277,13 @@ async function updateArtists() {
     let artistBatches = [];
     let batchStr = '';
     artists.forEach((artist, idx) => {
-        batchStr.concat(artist.artist_id);
+        batchStr += artist.artist_id;
         if((idx + 1) % 50 == 0 || idx + 1 == artists.length) { // get batches of 50
             artistBatches.push(batchStr);
             batchStr = '';
-        } 
-        batchStr.concat(',');
+        } else {
+            batchStr += ',';
+        }
     })
 
     artistBatches.forEach(async (batch) => {
@@ -263,8 +301,3 @@ async function updateArtists() {
         })
     })
 }
-
-updateHistory(); // Update history on server start
-setInterval(updateHistory,  1000 * 60 * 25);  // update every 25 minutes
-setInterval(updateUsers,    1000 * 60 * 60 * 24); // update daily
-setInterval(updateArtists,  1000 * 60 * 60 * 24);
