@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
-import { Bar } from 'react-chartjs-2';
-import db from '../../lib/db'
+import { Bar, Doughnut } from 'react-chartjs-2';
 
 const escape = require('sql-template-strings')
 
@@ -41,16 +40,10 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
                             </a>
                         </div>
                         <div className="group relative sidebar-item with-children">
-                            <a onClick={scrollIntoViewWrapper} dest='topArtists' className="block xl:flex xl:items-center text-center xl:text-left shadow-light xl:shadow-none py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" className="h-6 w-6 text-grey-darker fill-current xl:mr-2"><path d="M20 11.46V20a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-4h-2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8.54A4 4 0 0 1 2 8V7a1 1 0 0 1 .1-.45l2-4A1 1 0 0 1 5 2h14a1 1 0 0 1 .9.55l2 4c.06.14.1.3.1.45v1a4 4 0 0 1-2 3.46zM18 12c-1.2 0-2.27-.52-3-1.35a3.99 3.99 0 0 1-6 0A3.99 3.99 0 0 1 6 12v8h3v-4c0-1.1.9-2 2-2h2a2 2 0 0 1 2 2v4h3v-8zm2-4h-4a2 2 0 1 0 4 0zm-6 0h-4a2 2 0 1 0 4 0zM8 8H4a2 2 0 1 0 4 0zm11.38-2l-1-2H5.62l-1 2h14.76z" className="heroicon-ui"></path></svg>
-                                <div className="text-white text-xs">Store</div>
-                            </a>
+                            
                         </div>
                         <div className="group relative sidebar-item with-children">
-                            <a href="#" className="block xl:flex xl:items-center text-center xl:text-left shadow-light xl:shadow-none py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" className="h-6 w-6 text-grey-darker fill-current xl:mr-2"><path d="M12 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm9 11a1 1 0 0 1-2 0v-2a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v2a1 1 0 0 1-2 0v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2z" className="heroicon-ui"></path></svg>
-                                <div className="text-white text-xs">Users</div>
-                            </a>
+                           
                         </div>
                     </div>
                 </div>
@@ -58,7 +51,7 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
             <div className='pl-48 h-full grid grid-rows-5'>
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
-                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists:</div>
+                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists were:</div>
                         {artistPlaycountDataset.labels.slice(0,5).map((artist, idx) => { 
                                 let classes = 'pl-40 font-semibold text-' + (5 - idx); 
                                 return <div className='pt-8'><a onClick={changeArtistPicture} className={classes} img={top5Artists[artist]}>{artist}</a></div>
@@ -95,6 +88,16 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
                         }}
                     />
                 </div>
+                <div className='h-full graph grid grid-cols-2'>
+                    <div className='pl-16 pt-20 text-3xl font-semibold'>Your top genres were:</div>
+                    <div className='graph'>
+                        <Doughnut 
+                            
+
+                        />
+                    </div>
+                </div>
+
             </div>
         </div>
     )
@@ -137,38 +140,29 @@ export async function getServerSideProps(context) {
             }
         ]
     }
-
-    // Try fetching top 5 artists from database; if doesn't exist, fetch from API and store in database
-    // Don't store all artists because we don't really need to waste API calls/storage storing all artists, since we 
-    // only display first 5 anyway
+    
+    // Get images for top 5 artists
     const top5Artists = {};
-    let top5Ids = [];
     for(let i = 0; i < 5; i++) {
-        let fetchArtist = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`);
-        let artist = await fetchArtist.json();
-
-        if(artist.length == 0) {
-            top5Ids.push(artistPlaycount[i].artist_id); // store id so we can batch in single API call, not multiple
-        } else {
-            top5Artists[artist[0].artist_name] = artist[0].image;
-        }
+        let fetchPicture = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`)
+        let picture = await fetchPicture.json();
+        console.log(picture[0]);
+        top5Artists[picture[0].artist_name] = picture[0].image;
     }
-    // Some artists not in database, fetch their data and store in database
-    if(top5Ids.length > 0) {
-        const fetchArtists = await fetch('https://api.spotify.com/v1/artists?ids=' + top5Ids.join(','), {
-            method: 'GET',
-            headers: {
-                Authorization: 'Bearer ' + access_token,
+
+    /*
+    let genres = {};
+    artistPlaycount.forEach((artist, idx) => {
+        artist.genres.forEach((genre) => {
+            if(genre in genres) {
+                genres[genre] += 1;
+            } else {
+                genres[genre] = 1;
             }
         })
-        const artists = await fetchArtists.json();
-        for(let i = 0; i < artists.artists.length; i++) {
-            let a = artists.artists[i];
-            top5Artists[a.name] = a.images[0].url;
-            db.query(escape`INSERT INTO artists (artist_id, artist_name, image)
-                            VALUES(${a.id}, ${a.name}, ${a.images[0].url})`)
-        }
-    }
+    })
+
+    console.log(genres);*/
     
     return { props: { profile, artistPlaycountDataset, top5Artists} };
 }
