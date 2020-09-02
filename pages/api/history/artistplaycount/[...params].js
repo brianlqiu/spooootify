@@ -9,7 +9,7 @@ export default async (req, res) => {
     let startDate = query[1];
     let endDate = query[2];
 
-    let results = await db.query(escape`SELECT *, COUNT(artist_id) FROM history 
+    let results = await db.query(escape`SELECT artist_id, artist_name, COUNT(artist_id) FROM history 
                                         WHERE user_id=${user} AND date <= ${startDate} AND date >= ${endDate}
                                         GROUP BY artist_id 
                                         ORDER BY COUNT(artist_id) DESC`)
