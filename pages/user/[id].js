@@ -11,11 +11,15 @@ function changeAlbumPicture(e) {
     document.getElementById('albumPic').style.backgroundImage = 'url(' + e.target.getAttribute('img') + ')';
 }
 
+function changeTrackPicture(e) {
+    document.getElementById('trackPic').style.backgroundImage = 'url(' + e.target.getAttribute('img') + ')';
+}
+
 function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
 
-function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums }) {
+function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums, trackPlaycountDataset, top5Tracks }) {
     console.log(profile);
     let img = profile[0].image == null ? '/profile.png' : profile[0].image;
     return (
@@ -44,15 +48,15 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                         </div>
                         <div dest='topAlbums' className="group object-center relative sidebar-item with-children">
                             <a onClick={scrollIntoViewWrapper} dest='topAlbums' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                                <img id='albumicon' src='/album.svg'/>
+                                <img className='sidebaricon' src='/album.svg'/>
                                 <div dest='topAlbums' className="text-white text-xs pl-2">Albums</div>
                             </a>
                         </div>
-                        <div className="group relative sidebar-item with-children">
-                            
-                        </div>
-                        <div className="group relative sidebar-item with-children">
-                           
+                        <div dest='topTracks' className="group object-center relative sidebar-item with-children">
+                            <a onClick={scrollIntoViewWrapper} dest='topTracks' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
+                                <img className='sidebaricon' src='/track.svg'/>
+                                <div dest='topTracks' className="text-white text-xs pl-2">Tracks</div>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -137,6 +141,45 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                     />
                 </div>
 
+                <div className='topTracks h-full grid grid-cols-2 gap-3'>
+                    <div>
+                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top tracks were:</div>
+                        {trackPlaycountDataset.labels.slice(0,5).map((track, idx) => { 
+                                let classes = 'pl-40 font-semibold text-' + (2 - idx); 
+                                return <div className='pt-8'><a onClick={changeTrackPicture} className={classes} img={top5Tracks[track]}>{track}</a></div>
+                            }
+                        )}
+                    </div>
+                    <div id='trackPic' style={{backgroundImage: 'url(' + top5Tracks[trackPlaycountDataset.labels[0]] + ')'}}></div> 
+                </div>
+                <div className='topTracksGraph h-screen graph'>
+                    <Bar 
+                        width={40}
+                        height={40}
+                        data={trackPlaycountDataset}
+                        options={{
+                            maintainAspectRatio: false,
+                            legend: {
+                                labels: {
+                                    fontColor: 'black'
+                                }
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        fontColor: 'black',
+                                        beginAtZero: true,
+                                    }
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        fontColor: 'black'
+                                    }
+                                }]
+                            }
+                        }}
+                    />
+                </div>
             </div>
         </div>
     )
@@ -215,8 +258,43 @@ export async function getServerSideProps(context) {
             }
         ]
     }
+
+    // Fetch play count for tracks
+    const fetchTrackPlaycount = await fetch(`http://localhost:3000/api/history/trackplaycount/${id}/${start}/${end}`);
+    const trackPlaycount = await fetchTrackPlaycount.json();
     
-    return { props: { profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums} };
+    // Format album play count data for chart
+    let trackNames = [];
+    let trackPlaycounts = [];
+    let top5Tracks = {};
+    for(let i = 0; i < trackPlaycount.length; i++) {
+        let track = `${trackPlaycount[i].artist_name} - ${trackPlaycount[i].track_name}`;
+        if(i < 5) top5Tracks[track] = trackPlaycount[i].image;
+        trackNames.push(track);
+        trackPlaycounts.push(trackPlaycount[i]['COUNT(track_id)']);
+    }
+    // Format data for chart
+    let trackPlaycountDataset = {
+        labels: trackNames,
+        datasets: [
+            {
+                label: 'Play Count',
+                data: trackPlaycounts,
+                backgroundColor: 'rgba(45,55,72,0.6)',
+                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
+            }
+        ]
+    }
+    
+    return { props: { 
+                    profile, 
+                    artistPlaycountDataset, 
+                    top5Artists, 
+                    albumPlaycountDataset, 
+                    top5Albums, 
+                    trackPlaycountDataset,
+                    top5Tracks
+            } };
 }
 
 export default User;
