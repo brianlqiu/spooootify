@@ -3,8 +3,6 @@
 A web app built to deliver satisfying statsitics about your Spotify listening history. 
 
 ![Top artists](/public/example0.png)
-![Top artists graph](/public/example1.png)
-
 
 Statstify stores your listening history once you connect through Spotify, providing accurate and interesting information about your listening habits.
 
@@ -15,5 +13,6 @@ Work in progress, many exciting stats to be added in the future!
 Currently supported:
 - Top artists
 - Top albums
+- Top tracks
 
-Take a look at the **Projects** tab to see planned features!
+Take a look at the [Projects](https://github.com/brianlqiu/statstify/projects/1) tab to see planned and upcoming features!
