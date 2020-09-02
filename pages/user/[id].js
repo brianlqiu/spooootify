@@ -42,6 +42,12 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                                 <div dest='topArtists' className="text-white text-xs pl-2">Artists</div>
                             </a>
                         </div>
+                        <div dest='topAlbums' className="group object-center relative sidebar-item with-children">
+                            <a onClick={scrollIntoViewWrapper} dest='topAlbums' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
+                                <img id='albumicon' src='/album.svg'/>
+                                <div dest='topAlbums' className="text-white text-xs pl-2">Albums</div>
+                            </a>
+                        </div>
                         <div className="group relative sidebar-item with-children">
                             
                         </div>
