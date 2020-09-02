@@ -11,3 +11,9 @@ Statstify stores your listening history once you connect through Spotify, provid
 Built with Next.js and styled with Tailwind and Chart.js.
 
 Work in progress, many exciting stats to be added in the future!
+
+Currently supported:
+- Top artists
+- Top albums
+
+Take a look at the **Projects** tab to see planned features!
