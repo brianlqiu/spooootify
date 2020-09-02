@@ -4,15 +4,18 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 const escape = require('sql-template-strings')
 
 function changeArtistPicture(e) {
-    console.log(e.target.getAttribute('img'));
     document.getElementById('artistPic').style.backgroundImage = 'url(' + e.target.getAttribute('img') + ')';
+}
+
+function changeAlbumPicture(e) {
+    document.getElementById('albumPic').style.backgroundImage = 'url(' + e.target.getAttribute('img') + ')';
 }
 
 function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
 
-function User({ profile, artistPlaycountDataset, top5Artists }) {
+function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums }) {
     console.log(profile);
     let img = profile[0].image == null ? '/profile.png' : profile[0].image;
     return (
@@ -88,7 +91,45 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
                         }}
                     />
                 </div>
-                
+                <div className='topAlbums h-full grid grid-cols-2 gap-3'>
+                    <div>
+                        <div className='pl-16 pt-20 text-3xl font-semibold'>Your top albums were:</div>
+                        {albumPlaycountDataset.labels.slice(0,5).map((album, idx) => { 
+                                let classes = 'pl-40 font-semibold text-' + (2 - idx); 
+                                return <div className='pt-8'><a onClick={changeAlbumPicture} className={classes} img={top5Albums[album]}>{album}</a></div>
+                            }
+                        )}
+                    </div>
+                    <div id='albumPic' style={{backgroundImage: 'url(' + top5Albums[albumPlaycountDataset.labels[0]] + ')'}}></div> 
+                </div>
+                <div className='topAlbumGraph h-screen graph'>
+                    <Bar 
+                        width={40}
+                        height={40}
+                        data={albumPlaycountDataset}
+                        options={{
+                            maintainAspectRatio: false,
+                            legend: {
+                                labels: {
+                                    fontColor: 'black'
+                                }
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        fontColor: 'black',
+                                        beginAtZero: true,
+                                    }
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        fontColor: 'black'
+                                    }
+                                }]
+                            }
+                        }}
+                    />
+                </div>
 
             </div>
         </div>
@@ -138,7 +179,6 @@ export async function getServerSideProps(context) {
     for(let i = 0; i < 5; i++) {
         let fetchPicture = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`)
         let picture = await fetchPicture.json();
-        console.log(picture[0]);
         top5Artists[picture[0].artist_name] = picture[0].image;
     }
 
@@ -149,24 +189,28 @@ export async function getServerSideProps(context) {
     // Format album play count data for chart
     let albumNames = [];
     let albumPlaycounts = [];
+    let top5Albums = {};
     for(let i = 0; i < albumPlaycount.length; i++) {
-        albumNames.push(artistPlaycount[i].artist_name);
+        let album = `${albumPlaycount[i].artist_name} - ${albumPlaycount[i].album_name}`;
+        console.log(album);
+        if(i < 5) top5Albums[album] = albumPlaycount[i].image;
+        albumNames.push(album);
         albumPlaycounts.push(albumPlaycount[i]['COUNT(album_id)']);
     }
     // Format data for chart
-    let artistPlaycountDataset = {
-        labels: artistNames,
+    let albumPlaycountDataset = {
+        labels: albumNames,
         datasets: [
             {
                 label: 'Play Count',
-                data: artistPlaycounts,
+                data: albumPlaycounts,
                 backgroundColor: 'rgba(45,55,72,0.6)',
                 hoverBackgroundColor: 'rgba(45,55,72,0.8)',
             }
         ]
     }
     
-    return { props: { profile, artistPlaycountDataset, top5Artists} };
+    return { props: { profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums} };
 }
 
 export default User;
