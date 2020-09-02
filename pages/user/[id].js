@@ -88,15 +88,7 @@ function User({ profile, artistPlaycountDataset, top5Artists }) {
                         }}
                     />
                 </div>
-                <div className='h-full graph grid grid-cols-2'>
-                    <div className='pl-16 pt-20 text-3xl font-semibold'>Your top genres were:</div>
-                    <div className='graph'>
-                        <Doughnut 
-                            
-
-                        />
-                    </div>
-                </div>
+                
 
             </div>
         </div>
@@ -150,19 +142,29 @@ export async function getServerSideProps(context) {
         top5Artists[picture[0].artist_name] = picture[0].image;
     }
 
-    /*
-    let genres = {};
-    artistPlaycount.forEach((artist, idx) => {
-        artist.genres.forEach((genre) => {
-            if(genre in genres) {
-                genres[genre] += 1;
-            } else {
-                genres[genre] = 1;
+    // Fetch play count for album
+    const fetchAlbumPlaycount = await fetch(`http://localhost:3000/api/history/albumplaycount/${id}/${start}/${end}`);
+    const albumPlaycount = await fetchAlbumPlaycount.json();
+    
+    // Format album play count data for chart
+    let albumNames = [];
+    let albumPlaycounts = [];
+    for(let i = 0; i < albumPlaycount.length; i++) {
+        albumNames.push(artistPlaycount[i].artist_name);
+        albumPlaycounts.push(albumPlaycount[i]['COUNT(album_id)']);
+    }
+    // Format data for chart
+    let artistPlaycountDataset = {
+        labels: artistNames,
+        datasets: [
+            {
+                label: 'Play Count',
+                data: artistPlaycounts,
+                backgroundColor: 'rgba(45,55,72,0.6)',
+                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
             }
-        })
-    })
-
-    console.log(genres);*/
+        ]
+    }
     
     return { props: { profile, artistPlaycountDataset, top5Artists} };
 }
