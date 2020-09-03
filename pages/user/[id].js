@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut, Polar } from 'react-chartjs-2';
 
 const escape = require('sql-template-strings')
 
@@ -19,7 +19,7 @@ function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
 
-function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums, trackPlaycountDataset, top5Tracks }) {
+function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums, trackPlaycountDataset, top5Tracks, genreDataset }) {
     console.log(profile);
     let img = profile[0].image == null ? '/profile.png' : profile[0].image;
     return (
@@ -61,7 +61,7 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                     </div>
                 </div>
             </div>
-            <div className='pl-48 h-full grid grid-rows-5'>
+            <div className='pl-48 h-full grid grid-rows-6'>
                 <div className='topArtists h-full grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists were:</div>
@@ -180,6 +180,35 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                         }}
                     />
                 </div>
+
+                <div className='genresChart h-screen graph'>
+                    <Polar
+                        width={40}
+                        height={40}
+                        data={genreDataset}
+                        options={{
+                            maintainAspectRatio: false,
+                            legend: {
+                                labels: {
+                                    fontColor: 'black'
+                                }
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        fontColor: 'black',
+                                        beginAtZero: true,
+                                    }
+                                }],
+                                xAxes: [{
+                                    ticks: {
+                                        fontColor: 'black'
+                                    }
+                                }]
+                            }
+                        }}
+                    />
+                </div>
             </div>
         </div>
     )
@@ -206,10 +235,25 @@ export async function getServerSideProps(context) {
 
     let artistNames = [];
     let artistPlaycounts = [];
+    let genrePercentage = {};
+    let top5Artists = {};
     for(let i = 0; i < artistPlaycount.length; i++) {
+        let fetchArtist = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`)
+        let artist = await fetchArtist.json();
+        if(i < 5) { top5Artists[artist[0].artist_name] = artist[0].image; }
+        let genres = JSON.parse(artist[0].genres);
+        genres.forEach((genre) => {
+            if(genre in genrePercentage) {
+                genrePercentage[genre] += artistPlaycount[i]['COUNT(artist_id)'];
+            } else {
+                genrePercentage[genre] = artistPlaycount[i]['COUNT(artist_id)'];
+            }
+        })
+
         artistNames.push(artistPlaycount[i].artist_name);
         artistPlaycounts.push(artistPlaycount[i]['COUNT(artist_id)']);
     }
+
     // Format data for chart
     let artistPlaycountDataset = {
         labels: artistNames,
@@ -221,14 +265,6 @@ export async function getServerSideProps(context) {
                 hoverBackgroundColor: 'rgba(45,55,72,0.8)',
             }
         ]
-    }
-    
-    // Get images for top 5 artists
-    const top5Artists = {};
-    for(let i = 0; i < 5; i++) {
-        let fetchPicture = await fetch(`http://localhost:3000/api/artists/${artistPlaycount[i].artist_id}`)
-        let picture = await fetchPicture.json();
-        top5Artists[picture[0].artist_name] = picture[0].image;
     }
 
     // Fetch play count for album
@@ -285,6 +321,28 @@ export async function getServerSideProps(context) {
             }
         ]
     }
+
+    let numSongs = artistPlaycounts.reduce((prev, curr) => prev + curr);
+    Object.keys(genrePercentage).forEach((genre) => {
+        genrePercentage[genre] /= numSongs / 100;
+    })
+
+    let genreNames = Object.keys(genrePercentage);
+    let genrePercents = Object.values(genrePercentage);
+
+    console.log(genreNames);
+
+    let genreDataset = {
+        labels: genreNames,
+        datasets: [
+            {
+                label: 'Percentage of Listening Data',
+                data: genrePercents,
+                backgroundColor: 'rgba(45,55,72,0.6)',
+                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
+            }
+        ]
+    }
     
     return { props: { 
                     profile, 
@@ -293,7 +351,8 @@ export async function getServerSideProps(context) {
                     albumPlaycountDataset, 
                     top5Albums, 
                     trackPlaycountDataset,
-                    top5Tracks
+                    top5Tracks,
+                    genreDataset
             } };
 }
 

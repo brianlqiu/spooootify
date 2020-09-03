@@ -106,7 +106,7 @@ button:focus {
   filter: invert(1);
 }
 
-.topArtistGraph, .topAlbumGraph, .topTracksGraph {
+.topArtistGraph, .topAlbumGraph, .topTracksGraph, .genreChart {
   padding-left: 5%;
   background-color: #a0aec0;
   width: 100%;
