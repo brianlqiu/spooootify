@@ -208,13 +208,9 @@ async function updateHistory() {
                                     let batchArtists = await fetchBatchArtists.json();
                                 
                                     batchArtists.artists.forEach((a) => {
-                                        db.query(escape`INSERT INTO artists (artist_id, artist_name, image)
-                                                        VALUES (${a.id}, ${a.name}, ${a.images[0].url})`)
+                                        db.query(escape`INSERT INTO artists (artist_id, artist_name, image, genres)
+                                                        VALUES (${a.id}, ${a.name}, ${a.images[0].url}, ${JSON.stringify(a.genres)})`)
 
-                                        a.genres.forEach((genre) => {
-                                            db.query(escape`INSERT INTO artistgenremap (artist_id, genre)
-                                                            VALUES (${a.id}, ${genre})`);
-                                        })
                                     })
                                 })
                                 console.log('New timestamp: ' + newTimestamp);
