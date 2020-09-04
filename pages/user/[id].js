@@ -58,6 +58,12 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                                 <div dest='topTracks' className="text-white text-xs pl-2">Tracks</div>
                             </a>
                         </div>
+                        <div dest='genresChart' className="group object-center relative sidebar-item with-children">
+                            <a onClick={scrollIntoViewWrapper} dest='genresChart' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
+                                <img className='sidebaricon' src='/genre.svg'/>
+                                <div dest='genresChart' className="text-white text-xs pl-2">Genres</div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -193,19 +199,6 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                                     fontColor: 'black'
                                 }
                             },
-                            scales: {
-                                yAxes: [{
-                                    ticks: {
-                                        fontColor: 'black',
-                                        beginAtZero: true,
-                                    }
-                                }],
-                                xAxes: [{
-                                    ticks: {
-                                        fontColor: 'black'
-                                    }
-                                }]
-                            }
                         }}
                     />
                 </div>
@@ -338,8 +331,23 @@ export async function getServerSideProps(context) {
             {
                 label: 'Percentage of Listening Data',
                 data: genrePercents,
-                backgroundColor: 'rgba(45,55,72,0.6)',
-                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
+                backgroundColor: [
+                    '#bee3f8',
+                    '#90cdf4',
+                    '#63b3ed',
+                    '#c3dafe',
+                    '#a3bffa',
+                    '#7f9cf5',
+                    '#e9d8fd',
+                    '#d6bcfa',
+                    '#b794f4',
+                    '#cbd5e0',
+                    '#a0aec0',
+                    '#718096',
+                    '#4fd1c5',
+                    '#81e6d9',
+                    '#b2f5ea',
+                ],
             }
         ]
     }
