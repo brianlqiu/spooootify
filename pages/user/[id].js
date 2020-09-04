@@ -218,6 +218,7 @@ export async function getServerSideProps(context) {
 
     // By default, all data gotten will be for one week (will change later)
     let date = new Date();
+    date.setDate(date.getDate() + 1);
     let start = date.toISOString().substring(0, 10);
     date.setDate(date.getDate() - 7);
     let end = date.toISOString().substring(0, 10);
