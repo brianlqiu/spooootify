@@ -327,8 +327,8 @@ export async function getServerSideProps(context) {
         genrePercentage[genre] /= numSongs / 100;
     })
 
-    let genreNames = Object.keys(genrePercentage);
-    let genrePercents = Object.values(genrePercentage);
+    let genreNames = Object.keys(genrePercentage).slice(0, 15);
+    let genrePercents = Object.values(genrePercentage).slice(0, 15).map(num => Math.round(num * 100) / 100);
 
     console.log(genreNames);
 
