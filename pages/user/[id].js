@@ -67,8 +67,8 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                     </div>
                 </div>
             </div>
-            <div className='pl-48 h-full grid grid-rows-6'>
-                <div className='topArtists h-full grid grid-cols-2 gap-3'>
+            <div className='pl-48 h-screen grid grid-rows-8'>
+                <div className='topArtists h-screen grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top artists were:</div>
                         {artistPlaycountDataset.labels.slice(0,5).map((artist, idx) => { 
@@ -107,7 +107,7 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                         }}
                     />
                 </div>
-                <div className='topAlbums h-full grid grid-cols-2 gap-3'>
+                <div className='topAlbums h-screen grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top albums were:</div>
                         {albumPlaycountDataset.labels.slice(0,5).map((album, idx) => { 
@@ -147,7 +147,7 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                     />
                 </div>
 
-                <div className='topTracks h-full grid grid-cols-2 gap-3'>
+                <div className='topTracks h-screen grid grid-cols-2 gap-3'>
                     <div>
                         <div className='pl-16 pt-20 text-3xl font-semibold'>Your top tracks were:</div>
                         {trackPlaycountDataset.labels.slice(0,5).map((track, idx) => { 
