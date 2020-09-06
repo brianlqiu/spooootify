@@ -14,5 +14,6 @@ Currently supported:
 - Top artists
 - Top albums
 - Top tracks
+- Top genres
 
 Take a look at the [Projects](https://github.com/brianlqiu/statstify/projects/1) tab to see planned and upcoming features!
