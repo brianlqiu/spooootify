@@ -9,10 +9,13 @@ export default async (req, res) => {
     let startDate = query[1];
     let endDate = query[2];
 
+    console.log(startDate);
+    console.log(endDate);
+
     let results = await db.query(escape`SELECT AVG(valence), date FROM history 
                                         WHERE user_id=${user} AND date <= ${startDate} AND date >= ${endDate}
                                         GROUP BY date
-                                        ORDER BY COUNT(track_id) DESC`)
+                                        ORDER BY date`)
 
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json')

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Bar, Doughnut, Polar } from 'react-chartjs-2';
+import { Bar, Doughnut, Polar, Line } from 'react-chartjs-2';
 
 const escape = require('sql-template-strings')
 
@@ -19,7 +19,7 @@ function scrollIntoViewWrapper(e) {
     document.querySelector('.' + e.target.getAttribute('dest')).scrollIntoView({behavior: 'smooth'});
 }
 
-function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums, trackPlaycountDataset, top5Tracks, genreDataset }) {
+function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountDataset, top5Albums, trackPlaycountDataset, top5Tracks, genreDataset, valenceDataset }) {
     console.log(profile);
     let img = profile[0].image == null ? '/profile.png' : profile[0].image;
     return (
@@ -202,6 +202,22 @@ function User({ profile, artistPlaycountDataset, top5Artists, albumPlaycountData
                         }}
                     />
                 </div>
+
+                <div className='graph'>
+                    <Line 
+                        width={40}
+                        height={40}
+                        data={valenceDataset}
+                        options={{
+                            maintainAspectRatio: false,
+                            legend: {
+                                labels: {
+                                    fontColor: 'black'
+                                }
+                            }
+                        }}
+                    />
+                </div>
             </div>
         </div>
     )
@@ -352,7 +368,29 @@ export async function getServerSideProps(context) {
             }
         ]
     }
-    
+
+    const fetchValence = await fetch(`http://localhost:3000/api/history/valence/${id}/${start}/${end}`);
+    const valenceData = await fetchValence.json();
+
+    let dates = [];
+    let avgValence = [];
+    valenceData.forEach((data) => {
+        dates.push(data.date);
+        avgValence.push(data['AVG(valence)']);
+    })
+   
+    console.log(dates);
+    console.log(avgValence);
+    let valenceDataset = {
+        labels: dates,
+        datasets: [
+            {
+                label: 'Average Mood',
+                data: avgValence,
+            }
+        ]
+    }
+
     return { props: { 
                     profile, 
                     artistPlaycountDataset, 
@@ -361,8 +399,10 @@ export async function getServerSideProps(context) {
                     top5Albums, 
                     trackPlaycountDataset,
                     top5Tracks,
-                    genreDataset
-            } };
+                    genreDataset,
+                    valenceDataset,
+      
+    } };
 }
 
 export default User;
