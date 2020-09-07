@@ -376,7 +376,7 @@ export async function getServerSideProps(context) {
     let avgValence = [];
     valenceData.forEach((data) => {
         dates.push(data.date.substring(0, 10));
-        avgValence.push(data.valence);
+        avgValence.push(data.valence - 0.5);
     })
    
     let valenceDataset = {
@@ -385,6 +385,8 @@ export async function getServerSideProps(context) {
             {
                 label: 'Average Mood',
                 data: avgValence,
+                backgroundColor: 'rgba(45,55,72,0.6)',
+                hoverBackgroundColor: 'rgba(45,55,72,0.8)',
             }
         ]
     }
