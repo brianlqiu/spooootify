@@ -39,7 +39,7 @@ app.prepare()
             });
 
             const auth = await authRequest.json();
-            
+
             const profileRequest = await fetch('https://api.spotify.com/v1/me', {
                 headers: { 
                     'Authorization': 'Bearer ' + auth.access_token,
@@ -92,7 +92,7 @@ async function updateHistory() {
     if(users !== undefined && users.length > 0) {
         users.forEach(async (user) => {
             console.log(`Getting access token from ${user.refresh_token}`)
-            
+
             const requestAuth = await fetch(`https://accounts.spotify.com/api/token?grant_type=refresh_token&&refresh_token=${user.refresh_token}`, {
                 method: 'POST',
                 headers: {
@@ -102,7 +102,7 @@ async function updateHistory() {
             });
 
             const auth = await requestAuth.json();
-            
+
             let lastUpdated = user.last_updated == null ? null : new Date(user.last_updated);
             let afterQuery = user.last_updated == null ? '' : '&after=' + new Date(user.last_updated).getTime();
             const requestUserHistory = await fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=50${afterQuery}`, {
@@ -119,7 +119,7 @@ async function updateHistory() {
             let newLastUpdated = new Date();
             newLastUpdated.setHours(newLastUpdated.getHours() - 7);
             let newTimestamp = newLastUpdated.toISOString().substring(0, 19).replace('T', ' ');
-            
+
             let trackIds = userHistory.items.map((item) => item.track.id);
             if(trackIds.length > 0) {
                 let queryIds = trackIds.join(',');
@@ -130,7 +130,7 @@ async function updateHistory() {
                     }
                 });
                 const tracks = await tracksRequest.json();
-                
+
                 const featuresRequest = await fetch(`https://api.spotify.com/v1/audio-features?ids=${queryIds}`, {
                     headers: { 
                         'Authorization': 'Bearer ' + auth.access_token, 
@@ -185,7 +185,7 @@ async function updateHistory() {
                                                     VALUES  (${artist.id}, ${artist.name}, ${artist.images[0].url}, ${JSON.stringify(artist.genres)})`)
                     });
                 });
-                
+
                 db.query(escape`UPDATE users SET last_updated=${newTimestamp} WHERE id=${user.id}`);
             }
         })
@@ -231,7 +231,7 @@ async function updateArtists() {
         },
     });
     let access = await fetchAccess.json();
-    
+
     let artistBatches = [];
     let batchStr = '';
     artists.forEach((artist, idx) => {
@@ -254,7 +254,7 @@ async function updateArtists() {
         })
 
         let batchArtists = await fetchBatchArtists.json();
-    
+
         batchArtists.artists.forEach((a) => {
             db.query(escape`UPDATE artists SET artist_name=${a.name}, image=${a.images[0].url} WHERE artist_id=${a.id}`)
         })
