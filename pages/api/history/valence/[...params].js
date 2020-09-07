@@ -12,7 +12,7 @@ export default async (req, res) => {
     console.log(startDate);
     console.log(endDate);
 
-    let results = await db.query(escape`SELECT AVG(valence), date FROM history 
+    let results = await db.query(escape`SELECT ROUND(AVG(valence), 3) AS valence, date FROM history 
                                         WHERE user_id=${user} AND date <= ${startDate} AND date >= ${endDate}
                                         GROUP BY date
                                         ORDER BY date`)

@@ -375,12 +375,10 @@ export async function getServerSideProps(context) {
     let dates = [];
     let avgValence = [];
     valenceData.forEach((data) => {
-        dates.push(data.date);
-        avgValence.push(data['AVG(valence)']);
+        dates.push(data.date.substring(0, 10));
+        avgValence.push(data.valence);
     })
    
-    console.log(dates);
-    console.log(avgValence);
     let valenceDataset = {
         labels: dates,
         datasets: [
