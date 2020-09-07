@@ -15,5 +15,6 @@ Currently supported:
 - Top albums
 - Top tracks
 - Top genres
+- Mood chart
 
 Take a look at the [Projects](https://github.com/brianlqiu/statstify/projects/1) tab to see planned and upcoming features!
