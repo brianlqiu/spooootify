@@ -45,7 +45,7 @@ export default function Sidebar({ image, name }) {
                 </div>
                 <div dest='moodChart' className="group object-center relative sidebar-item with-children">
                     <a onClick={scrollIntoViewWrapper} dest='moodChart' className="block xl:flex xl:items-center object-center text-center xl:text-left shadow-light xl:shadow-none pl-4 py-6 xl:py-2 xl:px-4 border-l-4 border-transparent hover:bg-black">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="sidebaricon icon icon-tabler icon-tabler-mood-smile" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#000000" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="sidebaricon icon icon-tabler icon-tabler-mood-smile" width="44" height="44" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#000000" fill="none" strokeLinecap="round" strokeLinejoin="round">
                           <path stroke="none" d="M0 0h24v24H0z"/>
                           <circle cx="12" cy="12" r="9" />
                           <line x1="9" y1="10" x2="9.01" y2="10" />
