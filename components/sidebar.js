@@ -52,7 +52,7 @@ export default function Sidebar({ image, name }) {
                           <line x1="15" y1="10" x2="15.01" y2="10" />
                           <path d="M9.5 15a3.5 3.5 0 0 0 5 0" />
                         </svg>
-                        <div dest='moodChart' className="text-white text-xs pl-2">Genres</div>
+                        <div dest='moodChart' className="text-white text-xs pl-2">Mood</div>
                     </a>
                 </div>
             </div>
